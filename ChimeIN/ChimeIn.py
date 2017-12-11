@@ -94,17 +94,24 @@ sqs = boto3.resource('sqs')
 queue = sqs.get_queue_by_name(QueueName='ChimeIn.fifo')
 
 # Process messages by printing out body 
-for message in queue.receive_messages(MaxNumberOfMessages=10):
+#for message in queue.receive_messages(MaxNumberOfMessages=10):
+while(True):
+    for message in queue.receive_messages(MaxNumberOfMessages=10):
     
-    # turn on the light in the button
-    GPIO.output(5, GPIO.HIGH)
-    displayOn()
+       # turn on the light in the button
+       GPIO.output(5, GPIO.HIGH)
+       displayOn()
 
-    # Print out the body
-    print 'Message Body: ', message.body
+       # Print out the body
+       print 'Message Body: ', message.body, '<'
 
-    # delete message (keeping commented out for now to ease testing)
-    # message.delete()
+       # delete message (keeping commented out for now to ease testing)
+       message.delete()
+
+       if message == 'Flint says exit exit exit ':
+          GPIO.cleanup()
+          sys.exit()
+
 
 # Cleanup on exit. Only for development b/c real usage will just power down the pi
 GPIO.cleanup()
