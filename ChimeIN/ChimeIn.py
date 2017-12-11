@@ -12,6 +12,7 @@
 #
 
 
+import sys
 import RPi.GPIO as GPIO
 import time
 import simplejson
@@ -91,7 +92,7 @@ time.sleep(1)
 sqs = boto3.resource('sqs')
 
 # Get the queue. This returns an SQS.Queue instance
-queue = sqs.get_queue_by_name(QueueName='ChimeIn.fifo')
+queue = sqs.get_queue_by_name(QueueName='ChimeIn')
 
 # Process messages by printing out body 
 #for message in queue.receive_messages(MaxNumberOfMessages=10):
@@ -103,12 +104,13 @@ while(True):
        displayOn()
 
        # Print out the body
-       print 'Message Body: ', message.body, '<'
+       print 'Message Body:', message.body, '<'
 
        # delete message (keeping commented out for now to ease testing)
        message.delete()
 
-       if message == 'Flint says exit exit exit ':
+       if message.body == 'Flint says exit exit exit':
+          print 'trying to exit'
           GPIO.cleanup()
           sys.exit()
 
