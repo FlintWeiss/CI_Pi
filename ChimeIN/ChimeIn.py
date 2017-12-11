@@ -24,7 +24,7 @@ from luma.core.legacy import text, show_message
 from luma.core.legacy.font import proportional, CP437_FONT, LCD_FONT
 from max7219.led import device as led_device, matrix as led_matrix
 
-#GPIO.cleanup()
+
 GPIO.setmode(GPIO.BCM)
 
 # Light up button:
@@ -32,9 +32,6 @@ GPIO.setmode(GPIO.BCM)
 # GPIO 21 will read ground/LOW when button pressed
 GPIO.setup(5,  GPIO.OUT, initial=GPIO.LOW)
 GPIO.setup(21, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-
-
 
 # create matrix device
 serial = spi(port=0, device=0, gpio=noop())
@@ -49,9 +46,18 @@ def puttonPush(channel):
     displayOff()
 
     # turn off the light in the button
+#    GPIO.output(5, GPIO.LOW)
+    buttonLightOff()
+
+#==========================================================================================================
+# turn on the light in the button
+def buttonLightOn():
+    GPIO.output(5, GPIO.HIGH)
+
+#==========================================================================================================
+# turn off the light in the button
+def buttonLightOff():
     GPIO.output(5, GPIO.LOW)
-
-
 
 #==========================================================================================================
 # scroll message to the display
@@ -81,10 +87,10 @@ GPIO.add_event_detect(21, GPIO.FALLING, puttonPush, bouncetime=200)
 scrollMessage("Hello World")
 
 displayOn()
-GPIO.output(5, GPIO.HIGH)
+buttonLightOn()
 time.sleep(2)
 displayOff()
-GPIO.output(5, GPIO.LOW)
+buttonLightOff()
 time.sleep(1)
 
 
@@ -97,10 +103,10 @@ queue = sqs.get_queue_by_name(QueueName='ChimeIn')
 # Process messages by printing out body 
 #for message in queue.receive_messages(MaxNumberOfMessages=10):
 while(True):
-    for message in queue.receive_messages(MaxNumberOfMessages=10):
+   for message in queue.receive_messages(MaxNumberOfMessages=10):
     
        # turn on the light in the button
-       GPIO.output(5, GPIO.HIGH)
+       buttonLightOn()
        displayOn()
 
        # Print out the body
@@ -111,9 +117,14 @@ while(True):
 
        if message.body == 'Flint says exit exit exit':
           print 'trying to exit'
+          displayOff()
+          buttonLightOff()
+          scrollMessage("Exiting")
           GPIO.cleanup()
           sys.exit()
 
+   # sleep a quarter second because we don't need to hammer SQS
+   time.sleep(0.25) 
 
 # Cleanup on exit. Only for development b/c real usage will just power down the pi
 GPIO.cleanup()
