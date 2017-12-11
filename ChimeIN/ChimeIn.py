@@ -100,11 +100,11 @@ for message in queue.receive_messages(MaxNumberOfMessages=10):
     GPIO.output(5, GPIO.HIGH)
     displayOn()
 
-   # Print out the body
-   print 'Message Body: ', message.body
+    # Print out the body
+    print 'Message Body: ', message.body
 
-   # delete message (keeping commented out for now to ease testing)
-   # message.delete()
+    # delete message (keeping commented out for now to ease testing)
+    # message.delete()
 
 # Cleanup on exit. Only for development b/c real usage will just power down the pi
 GPIO.cleanup()
