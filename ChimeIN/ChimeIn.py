@@ -17,6 +17,7 @@ import RPi.GPIO as GPIO
 import time
 import simplejson
 import boto3
+from botocore.exceptions import ClientError
 from luma.led_matrix.device import max7219
 from luma.core.interface.serial import spi, noop
 from luma.core.render import canvas
@@ -94,37 +95,59 @@ buttonLightOff()
 time.sleep(1)
 
 
-# Get the service resource
-sqs = boto3.resource('sqs')
 
-# Get the queue. This returns an SQS.Queue instance
-queue = sqs.get_queue_by_name(QueueName='ChimeIn')
+#-------------------------------------------
+try:
+
+    # Get the service resource
+    sqs = boto3.resource('sqs')
+
+    # Get the queue. This returns an SQS.Queue instance
+    queue = sqs.get_queue_by_name(QueueName='ChimeIn')
+
+except ClientError as e:
+    pass
+#    if e.response['Error']['Code'] == 'EntityAlreadyExists':
+#        print "User already exists"
+#    else:
+#        print "Unexpected error: %s" % e
+#-------------------------------------------
+
+
 
 # Process messages by printing out body 
 #for message in queue.receive_messages(MaxNumberOfMessages=10):
 while(True):
-   for message in queue.receive_messages(MaxNumberOfMessages=10):
+
+   try:
+      for message in queue.receive_messages(MaxNumberOfMessages=10):
     
-       # turn on the light in the button
-       buttonLightOn()
-       displayOn()
+          # turn on the light in the button
+          buttonLightOn()
+          displayOn()
 
-       # Print out the body
-       print 'Message Body:', message.body, '<'
+          # Print out the body
+          print 'Message Body:', message.body, '<'
 
-       # delete message (keeping commented out for now to ease testing)
-       message.delete()
+          # delete message (keeping commented out for now to ease testing)
+          message.delete()
 
-       if message.body == 'Flint says exit exit exit':
-          print 'trying to exit'
-          displayOff()
-          buttonLightOff()
-          scrollMessage("Exiting")
-          GPIO.cleanup()
-          sys.exit()
+          if message.body == 'Flint says exit exit exit':
+             print 'trying to exit'
+             displayOff()
+             buttonLightOff()
+             scrollMessage("Exiting")
+             GPIO.cleanup()
+             sys.exit()
 
-   # sleep a quarter second because we don't need to hammer SQS
-   time.sleep(0.25) 
+      # sleep a quarter second because we don't need to hammer SQS
+      time.sleep(0.25) 
+
+   except ClientError as e:
+      # reconnect if there is any kind of error
+      sqs = boto3.resource('sqs')
+      queue = sqs.get_queue_by_name(QueueName='ChimeIn')
+      pass
 
 # Cleanup on exit. Only for development b/c real usage will just power down the pi
 GPIO.cleanup()
