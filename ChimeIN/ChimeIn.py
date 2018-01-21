@@ -124,11 +124,16 @@ while(True):
              scrollMessage("Exiting")
              print 'GPIO cleanup'
              GPIO.cleanup()
-             print 'sys exit'
-             sys.exit()
+             print 'raising system exit exception'
+             raise SystemExit
 
       # sleep a quarter second because we don't need to hammer SQS
       time.sleep(0.25) 
+
+   except SystemExit:
+      # have to exit from here to actually exit
+      print 'sys exit'
+      sys.exit()
 
    except:
       queue = None
