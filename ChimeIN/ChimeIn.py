@@ -94,30 +94,15 @@ displayOff()
 buttonLightOff()
 time.sleep(1)
 
+# Get the service resource
+sqs = boto3.resource('sqs')
+queue = None
 
-
-#-------------------------------------------
-try:
-
-    # Get the service resource
-    sqs = boto3.resource('sqs')
-
-    # Get the queue. This returns an SQS.Queue instance
-    queue = sqs.get_queue_by_name(QueueName='ChimeIn')
-
-except ClientError as e:
-    pass
-#    if e.response['Error']['Code'] == 'EntityAlreadyExists':
-#        print "User already exists"
-#    else:
-#        print "Unexpected error: %s" % e
-#-------------------------------------------
-
-
-
-# Process messages by printing out body 
-#for message in queue.receive_messages(MaxNumberOfMessages=10):
 while(True):
+
+   if queue is None:
+      # Get the queue. This returns an SQS.Queue instance
+      queue = sqs.get_queue_by_name(QueueName='ChimeIn')
 
    try:
       for message in queue.receive_messages(MaxNumberOfMessages=10):
@@ -137,17 +122,16 @@ while(True):
              displayOff()
              buttonLightOff()
              scrollMessage("Exiting")
+             print 'GPIO cleanup'
              GPIO.cleanup()
+             print 'sys exit'
              sys.exit()
 
       # sleep a quarter second because we don't need to hammer SQS
       time.sleep(0.25) 
 
-   except ClientError as e:
-      # reconnect if there is any kind of error
-      sqs = boto3.resource('sqs')
-      queue = sqs.get_queue_by_name(QueueName='ChimeIn')
-      pass
+   except:
+      queue = None
 
 # Cleanup on exit. Only for development b/c real usage will just power down the pi
 GPIO.cleanup()
